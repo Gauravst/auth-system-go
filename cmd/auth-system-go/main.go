@@ -39,10 +39,11 @@ func main() {
 	authRepo := repositories.NewAuthRepository(database.DB)
 	authService := services.NewAuthService(authRepo)
 
-	router.HandleFunc("POST /api/auth/signup", handlers.SignupUser(authService))
+	router.HandleFunc("POST /api/auth/signup", handlers.SignupUser(authService, cfg.SMTPMail))
 	router.HandleFunc("POST /api/auth/login", handlers.LoginUser(authService))
 	router.HandleFunc("POST /api/auth/refresh", handlers.RefreshToken(authService))
 	router.HandleFunc("POST /api/auth/resend-verification", handlers.VerifyEmail(authService))
+	router.HandleFunc("GET /api/auth/verify/{token}", handlers.VerifyEmail(authService))
 	router.HandleFunc("POST /api/auth/forgot-password", handlers.ForgotPassword(authService))
 	router.HandleFunc("POST /api/auth/reset-password", handlers.ResetPassword(authService))
 	router.HandleFunc("POST /api/auth/change-password", handlers.ChangePassword(authService))
@@ -76,7 +77,7 @@ func main() {
 
 	err := server.Shutdown(ctx)
 	if err != nil {
-		slog.Error("faild to Shutdown server", slog.String("error", err.Error()))
+		slog.Error("failed to Shutdown server", slog.String("error", err.Error()))
 	}
 
 	slog.Info("server Shutdown successfully")

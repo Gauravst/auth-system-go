@@ -14,10 +14,19 @@ type HTTPServer struct {
 	Port    int    `yaml:"port" env-required:"true"`
 }
 
+type SMTPMail struct {
+	Host string `env:"SMTP_HOST" env-required:"true"`
+	Port string `env:"SMTP_PORT" env-required:"true"`
+	User string `env:"SMTP_USER" env-required:"true"`
+	Pass string `env:"SMTP_PASS" env-required:"true"`
+	From string `env:"SMTP_FROM" env-required:"true"`
+}
+
 type Config struct {
 	Env         string `yaml:"env" env-required:"true" env-default:"production`
 	DatabaseUri string `env:"DATABASE_URI" env-required:"true"`
 	HTTPServer  `yaml:"http_server"`
+	SMTPMail
 }
 
 func ConfigMustLoad() *Config {

@@ -1,6 +1,8 @@
 package models
 
-import "time"
+import (
+	"time"
+)
 
 type User struct {
 	ID        int       `json:"id"`
@@ -10,4 +12,15 @@ type User struct {
 	Status    string    `json:"status"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type LoginSession struct {
+	Id        int
+	UserId    int
+	Token     string
+	IpAddress string
+	Useragent string
+	Status    string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }

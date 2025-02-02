@@ -3,11 +3,12 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/gauravst/auth-system-go/internal/config"
 	"github.com/gauravst/auth-system-go/internal/services"
 	"github.com/gauravst/auth-system-go/internal/utils/response"
 )
 
-func SignupUser(authService services.AuthService) http.HandlerFunc {
+func SignupUser(authService services.AuthService, smtpMail config.SMTPMail) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		response.WriteJson(w, http.StatusOK, "")
 	}

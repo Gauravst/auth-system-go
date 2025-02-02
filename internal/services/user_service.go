@@ -23,17 +23,37 @@ func NewUserService(userRepo repositories.UserRepository) UserService {
 }
 
 func (s *userService) GetAllUsers() ([]*models.User, error) {
-	return nil, nil
+	data, err := s.userRepo.GetAllUsers()
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }
 
 func (s *userService) GetUser(id int) (*models.User, error) {
-	return nil, nil
+	data, err := s.userRepo.GetUser(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }
 
 func (s *userService) UpdateUser(id int, data *models.User) error {
+	err := s.userRepo.UpdateUser(id, data)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (s *userService) DeleteUser(id int) error {
+	err := s.userRepo.DeleteUser(id)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

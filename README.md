@@ -21,6 +21,6 @@
 | POST   | `api/auth/forgot-password`     | Forgot Password.          |
 | POST   | `api/auth/reset-password`      | Reset Password.           |
 | POST   | `api/auth/change-password`     | Change Password.          |
-| POST   | `api/auth/status`              | Get Auth/Login Status.    |
+| GET    | `api/auth/status`              | Get Auth/Login Status.    |
 
 ---

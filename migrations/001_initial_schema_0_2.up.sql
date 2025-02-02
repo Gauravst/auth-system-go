@@ -4,7 +4,7 @@ CREATE TABLE users (
   username TEXT NOT NULL UNIQUE,
   email TEXT NOT NULL UNIQUE,
   password TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'active',
+  status TEXT NOT NULL DEFAULT 'pending',
   createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -15,8 +15,9 @@ CREATE TABLE login_sessions (
   token TEXT NOT NULL UNIQUE,
   ipAddress TEXT,
   userAgent TEXT,
-  loginAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  logoutAt TIMESTAMP
+  status TEXT NOT NULL DEFAULT 'login',
+  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE password_reset_tokens (
