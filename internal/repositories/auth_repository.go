@@ -11,8 +11,8 @@ type AuthRepository interface {
 	CheckUserExist(Username, email string) (*models.User, error)
 	SignupUser(data *models.User) error
 	LoginUser(data *models.LoginSession) error
-	RefreshToken(userId int, data *models.LoginSession) error
-	VerifyEmail(id int) error
+	GetRefreshToken(email string) (string, error)
+	VerifyEmail(email string) error
 	ForgotPassword(data *models.User) error
 	ResetPassword(data *models.User) error
 	ChangePassword(id int, password string) error
@@ -71,19 +71,20 @@ func (r *authRepository) LoginUser(data *models.LoginSession) error {
 	return nil
 }
 
-func (r *authRepository) RefreshToken(userId int, data *models.LoginSession) error {
-	query := `UPDATE login_sessions SET token = $1, ipAddress = $2, userAgent = $3  status = $4 WHERE userId = $5`
-	_, err := r.db.Exec(query, data.Token, data.IpAddress, data.Useragent, data.Status, userId)
-	if err != nil {
-		return err
-	}
+func (r *authRepository) GetRefreshToken(email string) (string, error) {
+	var token string
 
-	return nil
+	query := `SELECT token FROM login_sessions WHERE email = $1`
+	err := r.db.QueryRow(query, email).Scan(&token)
+	if err != nil {
+		return "", err
+	}
+	return token, nil
 }
 
-func (r *authRepository) VerifyEmail(id int) error {
-	query := `UPDATE users SET status = 'active' WHERE id = $1`
-	_, err := r.db.Exec(query, id)
+func (r *authRepository) VerifyEmail(email string) error {
+	query := `UPDATE users SET status = 'active' WHERE email = $1`
+	_, err := r.db.Exec(query, email)
 	if err != nil {
 		return err
 	}

@@ -39,8 +39,8 @@ func main() {
 	authRepo := repositories.NewAuthRepository(database.DB)
 	authService := services.NewAuthService(authRepo)
 
-	router.HandleFunc("POST /api/auth/signup", handlers.SignupUser(authService, cfg.SMTPMail))
-	router.HandleFunc("POST /api/auth/login", handlers.LoginUser(authService))
+	router.HandleFunc("POST /api/auth/signup", handlers.SignupUser(authService, cfg))
+	router.HandleFunc("POST /api/auth/login", handlers.LoginUser(authService, cfg))
 	router.HandleFunc("POST /api/auth/refresh", handlers.RefreshToken(authService))
 	router.HandleFunc("POST /api/auth/resend-verification", handlers.VerifyEmail(authService))
 	router.HandleFunc("GET /api/auth/verify/{token}", handlers.VerifyEmail(authService))

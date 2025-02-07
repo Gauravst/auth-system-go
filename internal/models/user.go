@@ -17,6 +17,7 @@ type User struct {
 type LoginSession struct {
 	Id        int
 	UserId    int
+	Email     string
 	Token     string
 	IpAddress string
 	Useragent string
