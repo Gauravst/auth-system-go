@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gauravst/auth-system-go/internal/api/handlers"
+	"github.com/gauravst/auth-system-go/internal/api/middleware"
 	"github.com/gauravst/auth-system-go/internal/config"
 	"github.com/gauravst/auth-system-go/internal/database"
 	"github.com/gauravst/auth-system-go/internal/repositories"
@@ -28,6 +29,7 @@ func main() {
 	//setup router
 	router := http.NewServeMux()
 
+	// user router/ routes
 	userRepo := repositories.NewUserRepository(database.DB)
 	userService := services.NewUserService(userRepo)
 
@@ -36,12 +38,18 @@ func main() {
 	router.HandleFunc("PUT /api/user/{id}", handlers.UpdateUser(userService))
 	router.HandleFunc("DELETE /api/user/{id}", handlers.DeleteUser(userService))
 
+	// auth router/ routes
 	authRepo := repositories.NewAuthRepository(database.DB)
 	authService := services.NewAuthService(authRepo)
 
 	router.HandleFunc("POST /api/auth/signup", handlers.SignupUser(authService, cfg))
 	router.HandleFunc("POST /api/auth/login", handlers.LoginUser(authService, cfg))
-	router.HandleFunc("POST /api/auth/refresh", handlers.RefreshToken(authService))
+
+	router.Handle("POST /api/auth/refresh",
+		middleware.Auth(cfg, &authService)(
+			http.HandlerFunc(handlers.RefreshToken(authService)),
+		),
+	)
 	router.HandleFunc("POST /api/auth/resend-verification", handlers.VerifyEmail(authService))
 	router.HandleFunc("GET /api/auth/verify/{token}", handlers.VerifyEmail(authService))
 	router.HandleFunc("POST /api/auth/forgot-password", handlers.ForgotPassword(authService))

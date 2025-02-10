@@ -2,6 +2,7 @@ package jwtToken
 
 import (
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -45,4 +46,15 @@ func CreateNewToken(data interface{}, key string) (string, error) {
 	}
 
 	return tokenString, nil
+}
+
+func SetAccessToken(w http.ResponseWriter, token string, secure bool) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     "accessToken",
+		Value:    token,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   secure,
+		SameSite: http.SameSiteLaxMode,
+	})
 }

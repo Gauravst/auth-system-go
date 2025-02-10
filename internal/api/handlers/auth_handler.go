@@ -8,13 +8,14 @@ import (
 	"github.com/gauravst/auth-system-go/internal/utils/response"
 )
 
-func SignupUser(authService services.AuthService, smtpMail config.SMTPMail) http.HandlerFunc {
+func SignupUser(authService services.AuthService, cfg *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		response.WriteJson(w, http.StatusOK, "")
 	}
 }
 
-func LoginUser(authService services.AuthService) http.HandlerFunc {
+func LoginUser(authService services.AuthService, cfg *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		response.WriteJson(w, http.StatusOK, "")
 	}

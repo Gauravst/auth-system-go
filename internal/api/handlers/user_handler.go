@@ -9,6 +9,13 @@ import (
 
 func GetAllUsers(userService services.UserService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		// var user models.User
+		// err := json.NewDecoder(r.Body).Decode(&user)
+		data, err := userService.GetAllUsers()
+		if err != nil {
+
+		}
 		response.WriteJson(w, http.StatusOK, "")
 	}
 }
