@@ -33,29 +33,74 @@ func main() {
 	userRepo := repositories.NewUserRepository(database.DB)
 	userService := services.NewUserService(userRepo)
 
-	router.HandleFunc("GET /api/user", handlers.GetAllUsers(userService))
-	router.HandleFunc("GET /api/user/{id}", handlers.GetUser(userService))
-	router.HandleFunc("PUT /api/user/{id}", handlers.UpdateUser(userService))
-	router.HandleFunc("DELETE /api/user/{id}", handlers.DeleteUser(userService))
-
 	// auth router/ routes
 	authRepo := repositories.NewAuthRepository(database.DB)
 	authService := services.NewAuthService(authRepo)
 
+	// get all users data
+	router.Handle("GET /api/users",
+		middleware.Auth(cfg, &authService)(
+			http.HandlerFunc(handlers.GetAllUsers(userService)),
+		),
+	)
+
+	// get user data currently login
+	router.Handle("GET /api/user",
+		middleware.Auth(cfg, &authService)(
+			http.HandlerFunc(handlers.GetUser(userService)),
+		),
+	)
+
+	//  only admin can do ..
+	router.Handle("GET /api/user/{id}",
+		middleware.Auth(cfg, &authService)(
+			http.HandlerFunc(handlers.GetUserById(userService)),
+		),
+	)
+
+	router.Handle("PUT /api/user/{id}",
+		middleware.Auth(cfg, &authService)(
+			http.HandlerFunc(handlers.UpdateUser(userService)),
+		),
+	)
+
+	router.Handle("DELETE /api/user/{id}",
+		middleware.Auth(cfg, &authService)(
+			http.HandlerFunc(handlers.DeleteUser(userService)),
+		),
+	)
+
 	router.HandleFunc("POST /api/auth/signup", handlers.SignupUser(authService, cfg))
 	router.HandleFunc("POST /api/auth/login", handlers.LoginUser(authService, cfg))
 
+	// this is temp.. to check middleware
 	router.Handle("POST /api/auth/refresh",
 		middleware.Auth(cfg, &authService)(
 			http.HandlerFunc(handlers.RefreshToken(authService)),
 		),
 	)
+
+	// resend verification mail to verify user account
 	router.HandleFunc("POST /api/auth/resend-verification", handlers.VerifyEmail(authService))
-	router.HandleFunc("GET /api/auth/verify/{token}", handlers.VerifyEmail(authService))
+
+	// verify email using link
+	router.HandleFunc("GET /api/{token}", handlers.VerifyEmail(authService, cfg))
+
+	// if user forgot password and user want to reset password using email
 	router.HandleFunc("POST /api/auth/forgot-password", handlers.ForgotPassword(authService))
+
+	// user want reset password and want set new password (wothout old password)
 	router.HandleFunc("POST /api/auth/reset-password", handlers.ResetPassword(authService))
+
+	// change user password with old(current) and new password
 	router.HandleFunc("POST /api/auth/change-password", handlers.ChangePassword(authService))
-	router.HandleFunc("GET /api/auth/status", handlers.AuthStatus(authService))
+
+	// to check user login or logut
+	router.Handle("POST /api/auth/status",
+		middleware.Auth(cfg, &authService)(
+			http.HandlerFunc(handlers.AuthStatus(authService)),
+		),
+	)
 
 	// setup server
 	server := &http.Server{

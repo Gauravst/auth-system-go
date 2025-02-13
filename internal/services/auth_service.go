@@ -14,9 +14,9 @@ import (
 )
 
 type AuthService interface {
-	SignupUser(data *models.User, cfg config.Config) error
-	LoginUser(loginData *models.LoginSession, userData *models.User, cfg config.Config) (string, error)
-	RefreshToken(token string, cfg config.Config) error
+	SignupUser(data *models.SignupRequest, cfg config.Config) error
+	LoginUser(data *models.LoginRequest, cfg config.Config) error
+	RefreshToken(token string, cfg config.Config) (string, interface{}, error)
 	VerifyEmail(token string, cfg config.Config) error
 	ForgotPassword(data *models.User) error
 	ResetPassword(data *models.User, jwt string) error
@@ -34,7 +34,7 @@ func NewAuthService(authRepo repositories.AuthRepository) AuthService {
 	}
 }
 
-func (s *authService) SignupUser(data *models.User, cfg config.Config) error {
+func (s *authService) SignupUser(data *models.SignupRequest, cfg config.Config) error {
 	// check user already exist or not
 	user, err := s.authRepo.CheckUserExist(data.Username, data.Email)
 	if err != nil {
@@ -85,21 +85,21 @@ func (s *authService) SignupUser(data *models.User, cfg config.Config) error {
 	return nil
 }
 
-func (s *authService) LoginUser(loginData *models.LoginSession, userData *models.User, cfg config.Config) (string, error) {
+func (s *authService) LoginUser(data *models.LoginRequest, cfg config.Config) error {
 	// check user exist
-	existUser, err := s.authRepo.CheckUserExist(userData.Username, userData.Email)
+	existUser, err := s.authRepo.CheckUserExist(data.Username, data.Email)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	if existUser == nil {
-		return "", fmt.Errorf("user not found")
+		return fmt.Errorf("user not found")
 	}
 
 	// check user password
-	err = hashing.CompareHashString(existUser.Password, userData.Password)
+	err = hashing.CompareHashString(existUser.Password, data.Password)
 	if err != nil {
-		return "", fmt.Errorf("invalid credentials")
+		return fmt.Errorf("invalid credentials")
 	}
 
 	// check user verfied or not
@@ -113,7 +113,7 @@ func (s *authService) LoginUser(loginData *models.LoginSession, userData *models
 		token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
 		tokenString, err := token.SignedString(cfg.JwtPrivateKey)
 
-		toList := []string{userData.Email}
+		toList := []string{data.Email}
 		verificationURL := fmt.Sprintf("http://localhost:8080/%s", tokenString)
 		body := fmt.Sprintf(
 			"This is an email for account verification. Here is your verification link: %s",
@@ -123,9 +123,9 @@ func (s *authService) LoginUser(loginData *models.LoginSession, userData *models
 		smtpMail := cfg.SMTPMail
 		err = email.SendEmail(smtpMail.User, smtpMail.Pass, smtpMail.Host, smtpMail.From, smtpMail.Port, toList, []byte(body))
 		if err != nil {
-			return "", err
+			return err
 		}
-		return "", fmt.Errorf("account not verfied, check you email")
+		return fmt.Errorf("account not verfied, check you email")
 	}
 
 	// accessToken
@@ -136,6 +136,7 @@ func (s *authService) LoginUser(loginData *models.LoginSession, userData *models
 	}
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
 	accessTokenString, err := accessToken.SignedString(cfg.JwtPrivateKey)
+	data.AccessToken = accessTokenString
 
 	// RefreshToken
 	claims = jwt.MapClaims{
@@ -145,24 +146,22 @@ func (s *authService) LoginUser(loginData *models.LoginSession, userData *models
 	}
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
 	refreshTokenString, err := refreshToken.SignedString(cfg.JwtPrivateKey)
-	loginData.Token = refreshTokenString
 
 	// creater new login in db
-	err = s.authRepo.LoginUser(loginData)
+	err = s.authRepo.LoginUser(&data, refreshTokenString)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	// send back using http (handler)
-	return accessTokenString, nil
+	return nil
 }
 
-func (s *authService) RefreshToken(token string, cfg config.Config) (string, error) {
+func (s *authService) RefreshToken(token string, cfg config.Config) (string, interface{}, error) {
 	// check token
 	userData, err := jwtToken.VerifyJwtAndGetData(token, cfg.JwtPrivateKey)
 	if err != nil {
 		if userData == nil {
-			return "", err
+			return "", nil, err
 		}
 	}
 
@@ -175,23 +174,23 @@ func (s *authService) RefreshToken(token string, cfg config.Config) (string, err
 
 	newToken, err := jwtToken.CreateNewToken(jwtData, cfg.JwtPrivateKey)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 
 	// get RefreshToken from db
 	refreshToken, err := s.authRepo.GetRefreshToken(userData.Email)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 
 	// check if RefreshToken is expired or not
 	_, err = jwtToken.VerifyJwtAndGetData(refreshToken, cfg.JwtPrivateKey)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 
 	// update  jwt in db and brouwser
-	return newToken, nil
+	return newToken, userData, nil
 }
 
 func (s *authService) VerifyEmail(token string, cfg config.Config) error {

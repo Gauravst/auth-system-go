@@ -9,8 +9,8 @@ import (
 
 type AuthRepository interface {
 	CheckUserExist(Username, email string) (*models.User, error)
-	SignupUser(data *models.User) error
-	LoginUser(data *models.LoginSession) error
+	SignupUser(data *models.SignupRequest) error
+	LoginUser(data *models.LoginRequest, refreshToken string) error
 	GetRefreshToken(email string) (string, error)
 	VerifyEmail(email string) error
 	ForgotPassword(data *models.User) error
@@ -49,11 +49,11 @@ func (r *userRepository) CheckUserExist(username, email string) (*models.User, e
 	return &user, nil
 }
 
-func (r *authRepository) SignupUser(data *models.User) error {
-	query := `INSERT INTO users (username, email, password, status) VALUES  ($1, $2, $3, $4) RETURNING *`
-	row := r.db.QueryRow(query, data.Username, data.Email, data.Password, data.Status)
+func (r *authRepository) SignupUser(data *models.SignupRequest) error {
+	query := `INSERT INTO users (username, email, password) VALUES  ($1, $2, $3) RETURNING *`
+	row := r.db.QueryRow(query, data.Username, data.Email, data.Password)
 
-	err := row.Scan(&data.ID, &data.Username, &data.Email, &data.Password, &data.Status)
+	err := row.Scan(&data.Id, &data.Username, &data.Email, &data.Password, &data.Status)
 	if err != nil {
 		return err
 	}
@@ -61,9 +61,9 @@ func (r *authRepository) SignupUser(data *models.User) error {
 	return nil
 }
 
-func (r *authRepository) LoginUser(data *models.LoginSession) error {
+func (r *authRepository) LoginUser(data *models.LoginRequest, refreshToken string) error {
 	query := `INSERT INTO login_sessions (userId, token, ipAddress, userAgent) VALUES ($1, $2, $3, $4)`
-	_, err := r.db.Exec(query, data.UserId, data.Token, data.IpAddress, data.Useragent)
+	_, err := r.db.Exec(query, data.Id, refreshToken, data.IpAddress, data.Useragent)
 	if err != nil {
 		return err
 	}
