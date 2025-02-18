@@ -18,10 +18,9 @@ type AuthService interface {
 	LoginUser(data *models.LoginRequest, cfg config.Config) error
 	RefreshToken(token string, cfg config.Config) (string, interface{}, error)
 	VerifyEmail(token string, cfg config.Config) error
-	ForgotPassword(data *models.User) error
-	ResetPassword(data *models.User, jwt string) error
-	ChangePassword(data *models.User) error
-	AuthStatus(jwt string) error
+	ForgotPassword(data *models.ForgotPasswordRequest) error
+	ResetPassword(data *models.ResetPasswordRequest, token string, cfg config.Config) (string, error)
+	ChangePassword(data *models.ChangePasswordRequest) error
 }
 
 type authService struct {
@@ -148,7 +147,7 @@ func (s *authService) LoginUser(data *models.LoginRequest, cfg config.Config) er
 	refreshTokenString, err := refreshToken.SignedString(cfg.JwtPrivateKey)
 
 	// creater new login in db
-	err = s.authRepo.LoginUser(&data, refreshTokenString)
+	err = s.authRepo.LoginUser(data, refreshTokenString)
 	if err != nil {
 		return err
 	}
@@ -202,20 +201,20 @@ func (s *authService) VerifyEmail(token string, cfg config.Config) error {
 		}
 	}
 
-	err = s.authRepo.VerifyEmail(data.email)
+	err = s.authRepo.VerifyEmail(data.Email)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *authService) ForgotPassword(data *models.User) error {
+func (s *authService) ForgotPassword(data *models.ForgotPasswordRequest) error {
 	// genrete jwt for email link token
 	// send email to ResetPassword
 	return nil
 }
 
-func (s *authService) ResetPassword(data *models.User, token string, cfg config.Config) (string, error) {
+func (s *authService) ResetPassword(data *models.ResetPasswordRequest, token string, cfg config.Config) (string, error) {
 	// verfy jwt/ token vaild or not to ResetPassword
 	jwtData, err := jwtToken.VerifyJwtAndGetData(token, cfg.JwtPrivateKey)
 	if err != nil {
@@ -227,7 +226,7 @@ func (s *authService) ResetPassword(data *models.User, token string, cfg config.
 	}
 
 	// hash new hash new password
-	hashedPassword, err := hashing.GenerateHashString(data.NewPassword)
+	hashedPassword, err := hashing.GenerateHashString(data.Password)
 	if err != nil {
 		return "", err
 	}
@@ -253,15 +252,15 @@ func (s *authService) ResetPassword(data *models.User, token string, cfg config.
 	return accessToken, nil
 }
 
-func (s *authService) ChangePassword(data *models.User) error {
+func (s *authService) ChangePassword(data *models.ChangePasswordRequest) error {
 	// check user password right or not
-	password, err := s.authRepo.CheckPassword(data)
+	userData, err := s.authRepo.CheckUserExist("", data.Email)
 	if err != nil {
 		return err
 	}
 
 	// Compare Hashed Password
-	err = hashing.CompareHashString(password, data.NewPassword)
+	err = hashing.CompareHashString(userData.Password, data.Password)
 	if err != nil {
 		return err
 	}
@@ -273,7 +272,7 @@ func (s *authService) ChangePassword(data *models.User) error {
 	}
 
 	// save hashedPassword in db
-	err := s.authRepo.ChangePassword(data.Email, hashedPassword)
+	err = s.authRepo.ChangePassword(data.Email, hashedPassword)
 	if err != nil {
 		return err
 	}

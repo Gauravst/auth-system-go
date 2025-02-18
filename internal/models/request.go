@@ -12,6 +12,7 @@ type SignupRequest struct {
 
 type LoginRequest struct {
 	Id          int       `json:"id,omitempty"`
+	UserId      int       `json:"userId"`
 	Username    string    `json:"username,omitempty"`
 	Email       string    `json:"email", validate:"required"`
 	Password    string    `json:"password" validate:"required"`

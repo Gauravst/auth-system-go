@@ -7,8 +7,7 @@ import (
 
 	"github.com/gauravst/auth-system-go/internal/config"
 	"github.com/gauravst/auth-system-go/internal/models"
-	"github.com/gauravst/auth-system-go/internal/services"
-	"github.com/gauravst/auth-system-go/internal/utils/jwtToken"
+	"github.com/gauravst/auth-system-go/internal/services" "github.com/gauravst/auth-system-go/internal/utils/jwtToken"
 	"github.com/gauravst/auth-system-go/internal/utils/response"
 	"github.com/go-playground/validator/v10"
 )
@@ -231,7 +230,14 @@ func ChangePassword(authService services.AuthService) http.HandlerFunc {
 func AuthStatus(authService services.AuthService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		//work done by auth middware
-		response.WriteJson(w, http.StatusOK, "")
+		var userData models.User
+		userData, ok := r.Context().Value(userDataKey).(models.User)
+		if !ok {
+			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(fmt.Errorf("user data not found")))
+			return
+		}
+
+		response.WriteJson(w, http.StatusOK, userData)
 		return
 	}
 }
